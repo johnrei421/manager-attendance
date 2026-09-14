@@ -1,4 +1,566 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0">
+
+<title>Manager Attendance</title>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f5f7;
+}
+
+.container {
+  max-width: 480px;
+  margin: auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,.10);
+}
+
+h2 {
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 25px;
+}
+
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+select {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+video {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+  background: black;
+  transform: scaleX(-1);
+}
+
+#preview {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 10px;
+  display: none;
+}
+
+canvas {
+  display: none;
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.enableButton {
+  background: #e4e4e4;
+}
+
+.cameraButton {
+  background: #333;
+  color: white;
+}
+
+.submitButton {
+  background: #163f73;
+  color: white;
+  font-weight: bold;
+}
+
+.status {
+  margin-top: 15px;
+  background: #f1f1f1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.notice {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Manager Attendance</h2>
+
+<div class="subtitle">
+KHealth / Careview Corporation
+</div>
+
+
 <form
   id="attendanceForm"
-  action="https://script.google.com/macros/s/AKfycbwfQkUO8QkDscvL02lTrmHmlOcf8tiYynbMj2ZG4zrbvgo-C90ACv01Ir7lgUj_knzn/exec"
+  action="https://script.google.com/macros/s/AKfycbz9KSDF_vr-iBfYToJ8vvKWy9SlFsXnw0Si0Au5wevX_G9LQ0mN5vhg9DAiTXpdI14S/exec"
   method="POST">
+
+
+<label>Name</label>
+
+<select
+  name="name"
+  required>
+
+<option value="">
+Select Name
+</option>
+
+<option value="Dela Cruz, Joselito">
+Dela Cruz, Joselito
+</option>
+
+<option value="Jacalne, Bryan Cyril">
+Jacalne, Bryan Cyril
+</option>
+
+<option value="Dizon, Sheila">
+Dizon, Sheila
+</option>
+
+<option value="Alido, Ava Maureen">
+Alido, Ava Maureen
+</option>
+
+<option value="De Leon, Alexis">
+De Leon, Alexis
+</option>
+
+<option value="Tan, Charles William">
+Tan, Charles William
+</option>
+
+<option value="Kim, Bumsoo">
+Kim, Bumsoo
+</option>
+
+<option value="Barrios, Anthony">
+Barrios, Anthony
+</option>
+
+<option value="Bernardo, Jean Kristine">
+Bernardo, Jean Kristine
+</option>
+
+<option value="Bernardo, Nikolai John">
+Bernardo, Nikolai John
+</option>
+
+</select>
+
+
+<label>Category</label>
+
+<select
+  name="category"
+  required>
+
+<option value="">
+Select Category
+</option>
+
+<option value="Time-In">
+Time-In
+</option>
+
+<option value="Time-Out">
+Time-Out
+</option>
+
+</select>
+
+
+<label>Selfie</label>
+
+<video
+  id="video"
+  autoplay
+  playsinline>
+</video>
+
+<canvas id="canvas"></canvas>
+
+<img
+  id="preview"
+  alt="Selfie Preview">
+
+
+<button
+  type="button"
+  class="enableButton"
+  onclick="enableCameraLocation()">
+
+Enable Camera & Location
+
+</button>
+
+
+<button
+  type="button"
+  class="cameraButton"
+  onclick="takeSelfie()">
+
+Take Selfie
+
+</button>
+
+
+<div
+  id="locationStatus"
+  class="status">
+
+Location not yet captured.
+
+</div>
+
+
+<input
+  type="hidden"
+  name="latitude"
+  id="latitude">
+
+
+<input
+  type="hidden"
+  name="longitude"
+  id="longitude">
+
+
+<input
+  type="hidden"
+  name="accuracy"
+  id="accuracy">
+
+
+<textarea
+  name="selfieData"
+  id="selfieData"
+  style="display:none;">
+</textarea>
+
+
+<button
+  type="submit"
+  class="submitButton">
+
+SUBMIT ATTENDANCE
+
+</button>
+
+
+<div class="notice">
+
+By submitting this attendance record, you authorize
+the recording of your attendance time, photograph and
+device-reported location for official attendance monitoring.
+
+</div>
+
+
+</form>
+
+</div>
+
+</div>
+
+
+<script>
+
+let cameraStream = null;
+
+let selfieTaken = false;
+
+let locationTaken = false;
+
+
+async function enableCameraLocation() {
+
+  await startCamera();
+
+  getLocation();
+
+}
+
+
+async function startCamera() {
+
+  try {
+
+    cameraStream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+          facingMode: "user"
+        },
+
+        audio: false
+
+      });
+
+
+    document
+      .getElementById("video")
+      .srcObject = cameraStream;
+
+
+  } catch (error) {
+
+    alert(
+      "Camera permission is required."
+    );
+
+  }
+
+}
+
+
+function getLocation() {
+
+  const status =
+    document.getElementById(
+      "locationStatus"
+    );
+
+
+  if (!navigator.geolocation) {
+
+    status.innerHTML =
+      "Location is not supported by this device.";
+
+    return;
+
+  }
+
+
+  status.innerHTML =
+    "Getting current location...";
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position) {
+
+      document
+        .getElementById("latitude")
+        .value =
+        position.coords.latitude;
+
+
+      document
+        .getElementById("longitude")
+        .value =
+        position.coords.longitude;
+
+
+      document
+        .getElementById("accuracy")
+        .value =
+        position.coords.accuracy;
+
+
+      locationTaken = true;
+
+
+      status.innerHTML =
+        "✓ Location captured<br>" +
+        "Accuracy: approximately " +
+        Math.round(position.coords.accuracy) +
+        " meters";
+
+    },
+
+
+    function(error) {
+
+      locationTaken = false;
+
+      status.innerHTML =
+        "Location permission is required.";
+
+    },
+
+
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
+    }
+
+  );
+
+}
+
+
+function takeSelfie() {
+
+  if (!cameraStream) {
+
+    alert(
+      "Please enable the camera first."
+    );
+
+    return;
+
+  }
+
+
+  const video =
+    document.getElementById("video");
+
+
+  const canvas =
+    document.getElementById("canvas");
+
+
+  const preview =
+    document.getElementById("preview");
+
+
+  const width = 480;
+
+
+  const height =
+    Math.round(
+      width *
+      video.videoHeight /
+      video.videoWidth
+    );
+
+
+  canvas.width = width;
+
+  canvas.height = height;
+
+
+  const ctx =
+    canvas.getContext("2d");
+
+
+  ctx.translate(
+    width,
+    0
+  );
+
+
+  ctx.scale(
+    -1,
+    1
+  );
+
+
+  ctx.drawImage(
+    video,
+    0,
+    0,
+    width,
+    height
+  );
+
+
+  const photo =
+    canvas.toDataURL(
+      "image/jpeg",
+      0.7
+    );
+
+
+  document
+    .getElementById("selfieData")
+    .value = photo;
+
+
+  preview.src = photo;
+
+  preview.style.display =
+    "block";
+
+
+  selfieTaken = true;
+
+}
+
+
+document
+  .getElementById("attendanceForm")
+  .addEventListener(
+    "submit",
+    function(event) {
+
+      if (!selfieTaken) {
+
+        event.preventDefault();
+
+        alert(
+          "Please take your selfie first."
+        );
+
+        return;
+
+      }
+
+
+      if (!locationTaken) {
+
+        event.preventDefault();
+
+        alert(
+          "Please enable your location first."
+        );
+
+        return;
+
+      }
+
+    }
+  );
+
+</script>
+
+</body>
+
+</html>
